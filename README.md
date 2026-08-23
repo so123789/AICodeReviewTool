@@ -248,7 +248,7 @@ This project is licensed under the MIT License. See [LICENSE](LICENSE) for detai
 ## 🙋‍♀️ Author
 
 **Souparnika C**  
-Senior Analyst & Full Stack Developer at Genpact
+AI/ML Enthusiast
 
 [![LinkedIn](https://img.shields.io/badge/LinkedIn-Connect-0077b5?style=flat-square&logo=linkedin)](https://linkedin.com/in/yourprofile)
 [![GitHub](https://img.shields.io/badge/GitHub-Follow-181717?style=flat-square&logo=github)](https://github.com/yourusername)
