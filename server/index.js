@@ -15,6 +15,11 @@ app.use("/api/review", require("./routes/review"));
 // Health check
 app.get("/", (req, res) => res.json({ status: "Server running" }));
 
+app.use(cors({
+  origin: "https://aicodereviewtool-1.onrender.com", // your frontend URL
+  credentials: true,
+}));
+
 mongoose
   .connect(process.env.MONGO_URI)
   .then(() => {
