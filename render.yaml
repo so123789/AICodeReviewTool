@@ -1,0 +1,51 @@
+services:
+  # ---------------------------------------------------------------------------
+  # 1. Express API Backend Service
+  # ---------------------------------------------------------------------------
+  - type: web
+    name: ai-code-review-api
+    env: node
+    region: singapore # or oregon, frankfurt, etc.
+    plan: free
+    rootDir: server
+    buildCommand: npm install
+    startCommand: node index.js
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 5000
+      - key: MONGO_URI
+        sync: false # User enters their MongoDB Atlas connection URI
+      - key: JWT_SECRET
+        generateValue: true # Render generates a secure random 32-character secret!
+      - key: ANTHROPIC_API_KEY
+        sync: false # User enters their Anthropic API key
+      - key: ANTHROPIC_MODEL
+        value: claude-sonnet-5
+      - key: CORS_ORIGINS
+        fromService:
+          type: web
+          name: ai-code-review-web
+          property: url
+
+  # ---------------------------------------------------------------------------
+  # 2. React Vite Frontend Static Site
+  # ---------------------------------------------------------------------------
+  - type: web
+    name: ai-code-review-web
+    env: static
+    rootDir: client
+    buildCommand: npm install && npm run build
+    staticPublishPath: client/dist
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: VITE_API_URL
+        fromService:
+          type: web
+          name: ai-code-review-api
+          property: url

@@ -10,4 +10,9 @@ const reviewSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// Every history read filters by userId and sorts by createdAt desc —
+// this compound index makes that query index-only instead of a full scan
+// once the collection grows past a handful of documents.
+reviewSchema.index({ userId: 1, createdAt: -1 });
+
 module.exports = mongoose.model("Review", reviewSchema);

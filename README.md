@@ -6,6 +6,7 @@
 
 **Detect bugs. Identify vulnerabilities. Improve code quality — instantly.**
 
+[![CI](https://github.com/yourusername/ai-code-review/actions/workflows/ci.yml/badge.svg)](https://github.com/yourusername/ai-code-review/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/License-MIT-22c55e?style=for-the-badge)](LICENSE)
 
 </div>
@@ -30,47 +31,38 @@
 
 ## 🚀 About the Project
 
-**CodeReviewAI** is a full-stack MERN web application that integrates the **Claude AI API (Anthropic)** to perform deep, structured code reviews across 16+ programming languages. It provides severity-categorized findings — Critical, High, Medium, Low, and Good Practice — with detailed explanations, line-level references, and suggested fixes for each identified issue.
+**CodeReviewAI** is a full-stack MERN application that integrates the **Anthropic Claude API** to perform deep, structured code reviews across 15+ programming languages. It returns severity-categorized findings — Critical, High, Medium, Low, and Good Practice — with detailed explanations, line-level references, and suggested fixes.
 
-The project is built with React 19, Node.js, Express, and MongoDB, featuring secure JWT authentication, persistent review history, and a modern responsive dark/light theme system.
+Beyond the core feature set, v2.1 focuses on making the app **production-ready**: input validation, rate limiting, centralized error handling, structured logging, environment validation, an automated test suite, Docker images, and a CI pipeline.
 
 ---
 
-## ✨ Features & What's New in v2
+## ✨ Features
 
 | Feature | Description |
 |---|---|
-| 🤖 **Claude AI Reviews** | Powered by `claude-sonnet-4-6` for deep code analysis |
-| 🏠 **Modern Landing Page** | Clean presentation with hero, features, languages, and how-it-works sections |
-| 🔴🟠🟡🔵🟢 **Severity Classification** | Findings categorized as Critical / High / Medium / Low / Good |
-| 🌙 **Dark & Light Mode** | Theme toggle with localStorage persistence via React Context API |
-| 🔐 **JWT Authentication** | Secure login, register, password show/hide, and protected routes |
-| 📋 **Review History** | All past reviews saved to MongoDB with a sidebar for quick toggling |
-| 📊 **Structured Findings UI** | Split-panel layout separating code editor/view and detailed feedback |
-| 📱 **Fully Responsive** | Optimized layouts for desktop, tablet, and mobile devices |
-| 🔔 **Toast Notifications** | Modern in-app success/error toast alerts (no browser alerts) |
-| 🖥️ **Code Editor Panel** | Monospace editor with language selector and clear/reset options |
+| 🤖 **Claude AI Reviews** | Structured, severity-classified code analysis via the Anthropic SDK |
+| 🔐 **JWT Authentication** | Registration/login with bcrypt hashing, rate-limited auth endpoints |
+| 📋 **Review History** | Paginated history per user, backed by an indexed MongoDB query |
+| 🌙 **Dark & Light Mode** | Theme toggle persisted via React Context + localStorage |
+| 🔔 **Toast Notifications** | In-app success/error alerts, no browser `alert()` |
+| 🛡️ **Hardened API** | Helmet security headers, per-route rate limiting, request size caps, input validation |
+| 🧯 **Centralized Error Handling** | Every route funnels errors through one handler — no leaked stack traces |
+| ✅ **Automated Tests** | Jest + Supertest integration tests against an in-memory MongoDB |
+| 🐳 **Dockerized** | Multi-stage client (nginx) and server images, plus a full `docker-compose` stack |
+| ⚙️ **CI Pipeline** | GitHub Actions runs the test suite and a production build on every push |
 
 ---
 
 ## 🛠️ Tech Stack
 
-**Frontend**
-- React 19 + Vite
-- React Router DOM v7
-- React Markdown
-- React Context API (Theme System)
-- Vanilla CSS with CSS Variables
+**Frontend** — React 19 · Vite · React Router DOM v7 · React Markdown · Context API · Vanilla CSS
 
-**Backend**
-- Node.js + Express
-- MongoDB Atlas + Mongoose
-- JSON Web Tokens (JWT)
-- bcryptjs
+**Backend** — Node.js · Express · MongoDB (Mongoose) · JWT · bcryptjs · Helmet · express-rate-limit · express-validator · morgan
 
-**AI Integration**
-- Anthropic Claude API (`claude-sonnet-4-6` prompt patterns)
-- Structured prompt engineering for severity-classified output
+**AI Integration** — Anthropic Claude API, structured prompt engineering for severity-classified output
+
+**Tooling** — Jest · Supertest · mongodb-memory-server · Docker · GitHub Actions
 
 ---
 
@@ -78,138 +70,120 @@ The project is built with React 19, Node.js, Express, and MongoDB, featuring sec
 
 ```
 ai-code-review/
-├── client/                        # React 19 + Vite frontend
-│   └── src/
-│       ├── context/
-│       │   └── ThemeContext.jsx   # Global dark/light theme (React Context)
-│       ├── components/
-│       │   ├── Navbar.jsx         # Sticky nav — auth-aware, theme toggle
-│       │   └── Toast.jsx          # Reusable toast notification system
-│       ├── pages/
-│       │   ├── Landing.jsx        # SaaS landing page
-│       │   ├── Login.jsx          # Auth — show/hide password, toast errors
-│       │   ├── Register.jsx       # Auth — validation, confirm password
-│       │   ├── Dashboard.jsx      # Code editor + AI findings panel
-│       │   └── History.jsx        # Past reviews with sidebar
-│       └── api/
-│           └── axios.js           # Axios instance with JWT interceptor
+├── .github/workflows/ci.yml       # Test + build on every push/PR
+├── docker-compose.yml              # Full local stack: mongo + server + client
 │
-└── server/                        # Node.js + Express backend
-    ├── routes/
-    │   ├── auth.js                # POST /register, POST /login
-    │   └── review.js              # POST /review, GET /review/history
-    ├── models/
-    │   ├── User.js                # MongoDB User schema
-    │   └── Review.js              # MongoDB Review schema
+├── client/                         # React 19 + Vite frontend
+│   ├── Dockerfile / nginx.conf     # Production static build, served by nginx
+│   └── src/
+│       ├── context/ThemeContext.jsx
+│       ├── components/
+│       │   ├── Navbar.jsx
+│       │   ├── Toast.jsx
+│       │   └── ErrorBoundary.jsx   # Catches render errors, shows a recovery screen
+│       ├── pages/                  # Landing, Login, Register, Dashboard, History
+│       └── api/axios.js            # Env-driven base URL, JWT interceptor, 401 auto-logout
+│
+└── server/                         # Node.js + Express backend
+    ├── Dockerfile
+    ├── config/env.js               # Validates required env vars on boot; fails fast
     ├── middleware/
-    │   └── protect.js             # JWT auth middleware
-    └── index.js                   # Express server entry point
+    │   ├── errorHandler.js         # Centralized error + 404 handling
+    │   ├── rateLimiter.js          # Per-route limits (auth / review / general API)
+    │   ├── validate.js             # express-validator result -> consistent 400s
+    │   ├── asyncHandler.js         # Forwards async route rejections to the error handler
+    │   └── protect.js              # JWT auth middleware
+    ├── routes/
+    │   ├── auth.js                 # POST /register, POST /login (validated, rate-limited)
+    │   └── review.js               # POST /review, GET /review/history (paginated)
+    ├── models/
+    │   ├── User.js
+    │   └── Review.js               # Compound index on {userId, createdAt}
+    ├── tests/                      # Jest + Supertest integration tests
+    └── index.js                    # App bootstrap, health check, graceful shutdown
 ```
 
 ---
 
 ## ⚡ Getting Started
 
-### Prerequisites
-
-- Node.js v18+
-- A [MongoDB Atlas](https://cloud.mongodb.com) database (or local MongoDB)
-- An [Anthropic API Key](https://console.anthropic.com)
-
-### 1. Clone the Repository
+### Option A — Docker (recommended)
 
 ```bash
-git clone https://github.com/yourusername/ai-code-review.git
-cd ai-code-review
+cp server/.env.example server/.env   # fill in JWT_SECRET and ANTHROPIC_API_KEY
+docker compose up --build
 ```
 
-### 2. Set up the Backend
+This starts MongoDB, the API (`http://localhost:5000`), and the frontend (`http://localhost:5173`) together.
+
+### Option B — Run locally
+
+**Prerequisites:** Node.js v18+, a MongoDB instance (Atlas or local), an [Anthropic API key](https://console.anthropic.com).
+
+```bash
+# Backend
+cd server
+npm install
+cp .env.example .env   # fill in MONGO_URI, JWT_SECRET, ANTHROPIC_API_KEY
+npm run dev             # http://localhost:5000
+
+# Frontend (new terminal)
+cd client
+npm install
+cp .env.example .env    # VITE_API_URL defaults to http://localhost:5000/api
+npm run dev              # http://localhost:5173
+```
+
+### Running the test suite
 
 ```bash
 cd server
-npm install
+npm test
 ```
 
-Create a `.env` file inside `/server`:
-
-```env
-MONGO_URI=your_mongodb_atlas_connection_string
-JWT_SECRET=any_random_secret_string
-ANTHROPIC_API_KEY=your_claude_api_key
-```
-
-Start the backend server:
-
-```bash
-node index.js
-# ✅ MongoDB connected
-# ✅ Server running on http://localhost:5000
-```
-
-### 3. Set up the Frontend
-
-Open a new terminal window:
-
-```bash
-cd client
-npm install
-npm run dev
-```
-
-Open **http://localhost:5173** in your browser.
+Tests spin up an in-memory MongoDB (`mongodb-memory-server`) — no real database needed. They also run automatically in CI on every push/PR (see `.github/workflows/ci.yml`).
 
 ---
 
 ## 🔌 API Endpoints
 
-| Method | Endpoint | Auth | Description |
-|--------|----------|------|-------------|
-| `POST` | `/api/auth/register` | ❌ | Create a new user account |
-| `POST` | `/api/auth/login` | ❌ | Login and receive JWT token |
-| `POST` | `/api/review` | ✅ JWT | Submit code for AI review |
-| `GET` | `/api/review/history` | ✅ JWT | Fetch all reviews for logged-in user |
+| Method | Endpoint | Auth | Rate-limited | Description |
+|--------|----------|------|--------------|--------------|
+| `POST` | `/api/auth/register` | ❌ | ✅ | Create a new user account |
+| `POST` | `/api/auth/login` | ❌ | ✅ | Login and receive a JWT |
+| `POST` | `/api/review` | ✅ JWT | ✅ (strict) | Submit code for AI review |
+| `GET` | `/api/review/history?page=&limit=` | ✅ JWT | ✅ | Paginated review history for the logged-in user |
+| `GET` | `/health` | ❌ | — | Liveness/readiness check, reports DB connection state |
 
 ---
 
 ## 🧠 How the AI Review Works
 
-1. User pastes code and selects language on the Dashboard.
-2. Frontend calls `POST /api/review` with `{ code, language }`.
-3. Backend sends a structured prompt to Claude Sonnet via Anthropic SDK.
-4. Claude returns a structured markdown response with severity-classified headings.
-5. Frontend parses the response into a findings list with severity badges.
-6. Each finding displays: Problem → Why it matters → Fix → Corrected code block.
+1. User pastes code and selects a language on the Dashboard.
+2. Frontend calls `POST /api/review` with `{ code, language }` (validated: known language, code within `MAX_CODE_LENGTH`).
+3. Backend sends a structured prompt to Claude via the Anthropic SDK.
+4. Claude returns severity-classified markdown findings.
+5. Frontend parses the response into a findings list with severity badges and a raw report view.
+6. The review is persisted to MongoDB against the authenticated user.
 
-**Sample prompt structure sent to Claude:**
-```
-## [Critical] Issue Title
-**Line:** 12
-**Problem:** ...
-**Why it matters:** ...
-**Fix:** ...
-```code
-corrected code
-```
-```
+---
+
+## 🔒 Production Hardening Notes
+
+- **CORS** is allow-listed via `CORS_ORIGINS` (comma-separated) rather than wide open or hardcoded to one URL.
+- **Rate limiting** is tiered: a loose general API limit, a tighter auth limit (brute-force mitigation), and a strict per-minute limit on `/api/review` since each call costs real money against the Anthropic API.
+- **Input validation** (`express-validator`) rejects bad payloads before they reach business logic — including a max code length and an allow-list of supported languages.
+- **Environment validation** on boot (`config/env.js`) fails fast with a clear message instead of crashing deep inside a request handler when a secret is missing.
+- **Error handling** is centralized: route handlers `throw`/reject and one middleware decides the client-facing message, so stack traces never leak in production.
+- **Auth responses** use a single generic "Invalid email or password" message for both "no such user" and "wrong password" to avoid confirming which emails are registered.
 
 ---
 
 ## 🌐 Deployment
 
-### Backend → Render
+**Backend → Render/Railway/Fly.io** — set the root directory to `/server`, build command `npm install`, start command `node index.js`, and configure `MONGO_URI`, `JWT_SECRET`, `ANTHROPIC_API_KEY`, `CORS_ORIGINS` as environment variables. The Dockerfile in `/server` also works directly on any container platform.
 
-1. Push your code repository to GitHub.
-2. Create a new **Web Service** on [render.com](https://render.com).
-3. Set the Root Directory to `/server`.
-4. Configure the environment variables (`MONGO_URI`, `JWT_SECRET`, `ANTHROPIC_API_KEY`).
-5. Set Build Command to `npm install` and Start Command to `node index.js`.
-
-### Frontend → Netlify / Vercel
-
-1. Create a new site on your chosen platform.
-2. Set the Root Directory to `/client`.
-3. Set Build Command to `npm run build` and Publish Directory to `dist`.
-4. Add environment variable: `VITE_API_URL=https://your-render-url.onrender.com/api`
+**Frontend → Netlify/Vercel** — root directory `/client`, build command `npm run build`, publish directory `dist`, environment variable `VITE_API_URL=https://your-backend-url/api`.
 
 ---
 
@@ -230,25 +204,19 @@ var result = getUserData(null, 5)
 console.log(result.name)
 ```
 
-**Expected findings:**
-- 🔴 **Off-by-one error:** `i <= users.length` crashes on the last index.
-- 🔴 **Null reference:** `null` is passed as the `users` array without checking.
-- 🟠 **Unsafe property access:** No check before accessing `result.name`.
-- 🟡 **Loose equality check:** `==` should be strict `===`.
-- 🟡 **Scope declaration:** `var` should be `const`/`let`.
+**Expected findings:** off-by-one loop bound, missing null check on `users`, unsafe property access on `result`, loose equality (`==`), and `var` vs `const`/`let`.
 
 ---
 
 ## 📄 License
 
-This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
+MIT — see [LICENSE](LICENSE).
 
 ---
 
 ## 🙋‍♀️ Author
 
-**Souparnika C**  
-AI/ML Enthusiast
+**Souparnika C** — Full Stack Developer
 
 [![LinkedIn](https://img.shields.io/badge/LinkedIn-Connect-0077b5?style=flat-square&logo=linkedin)](https://linkedin.com/in/yourprofile)
 [![GitHub](https://img.shields.io/badge/GitHub-Follow-181717?style=flat-square&logo=github)](https://github.com/yourusername)
@@ -256,5 +224,5 @@ AI/ML Enthusiast
 ---
 
 <div align="center">
-  <sub>Built with ❤️ using React, Node.js, MongoDB, and Claude AI</sub>
+  <sub>Built with React, Node.js, MongoDB, and the Anthropic Claude API</sub>
 </div>

@@ -4,31 +4,27 @@ import ReactMarkdown from "react-markdown";
 import API from "../api/axios";
 import Navbar from "../components/Navbar";
 import { ToastContainer, useToast } from "../components/Toast";
+import { Icons } from "../components/Icons";
 
 export default function History() {
   const [reviews, setReviews] = useState([]);
   const [selected, setSelected] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [view, setView] = useState("feedback"); // feedback | code
+  const [view, setView] = useState("feedback");
   const { toasts, addToast, removeToast } = useToast();
 
   useEffect(() => {
     API.get("/review/history")
       .then(({ data }) => {
-        setReviews(data);
-        if (data.length > 0) setSelected(data[0]);
+        const list = data.reviews || [];
+        setReviews(list);
+        if (list.length > 0) setSelected(list[0]);
       })
       .catch(() => addToast({ type: "error", title: "Error", message: "Failed to load review history." }))
       .finally(() => setLoading(false));
   }, []);
 
   const fmt = (iso) => new Date(iso).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" });
-
-  const LANG_COLORS = {
-    javascript: "#f0db4f", typescript: "#3178c6", python: "#3572a5",
-    java: "#b07219", go: "#00add8", rust: "#dea584",
-    php: "#4f5d95", ruby: "#701516", cpp: "#f34b7d",
-  };
 
   return (
     <div style={{ minHeight: "100vh", background: "var(--bg)", display: "flex", flexDirection: "column" }}>
@@ -39,17 +35,29 @@ export default function History() {
         {/* Sidebar */}
         <div style={s.sidebar}>
           <div style={s.sideHeader}>
-            <h2 style={{ fontSize: 15, fontWeight: 700 }}>Review History</h2>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <Icons.History size={16} color="var(--primary)" />
+              <h2 style={{ fontSize: 14, fontWeight: 700 }}>Review History</h2>
+            </div>
             <span style={s.count}>{reviews.length}</span>
           </div>
 
-          {loading && <div style={s.sideEmpty}>Loading...</div>}
+          {loading && (
+            <div style={s.sideEmpty}>
+              <span style={{ ...s.spinner, marginBottom: 8 }} />
+              <div>Loading past reviews...</div>
+            </div>
+          )}
+
           {!loading && reviews.length === 0 && (
-            <div style={s.sideEmpty}>No reviews yet.<br /><a href="/dashboard">Start reviewing →</a></div>
+            <div style={s.sideEmpty}>
+              <Icons.FileText size={24} color="var(--text3)" style={{ marginBottom: 8 }} />
+              <div>No reviews recorded yet.</div>
+              <a href="/dashboard" style={{ marginTop: 8, fontSize: 13, fontWeight: 600 }}>Run your first review →</a>
+            </div>
           )}
 
           {reviews.map((r) => {
-            const langColor = LANG_COLORS[r.language] || "var(--primary)";
             const isActive = selected?._id === r._id;
             return (
               <div
@@ -58,56 +66,66 @@ export default function History() {
                 style={{
                   ...s.sideItem,
                   background: isActive ? "var(--primary-dim)" : "transparent",
-                  borderLeft: isActive ? "3px solid var(--primary)" : "3px solid transparent",
+                  borderLeftColor: isActive ? "var(--primary)" : "transparent",
                 }}
               >
                 <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
-                  <span style={{ ...s.langDot, background: langColor }} />
-                  <span style={{ fontSize: 12, fontWeight: 600, color: "var(--text)" }}>{r.language}</span>
+                  <span style={s.langBadge}>{r.language.toUpperCase()}</span>
                   <span style={{ fontSize: 11, color: "var(--text3)", marginLeft: "auto" }}>{fmt(r.createdAt)}</span>
                 </div>
-                <p style={s.snippet}>{r.code.slice(0, 70)}…</p>
+                <p style={s.snippet}>{r.code.slice(0, 60)}…</p>
               </div>
             );
           })}
         </div>
 
-        {/* Main */}
+        {/* Main detail view */}
         <div style={s.main}>
           {!selected && !loading && (
             <div style={s.empty}>
-              <div style={{ fontSize: 48, opacity: 0.3, marginBottom: 12 }}>📋</div>
-              <h3>No Review Selected</h3>
-              <p style={{ color: "var(--text3)" }}>Pick a review from the sidebar</p>
+              <Icons.History size={40} color="var(--text3)" style={{ opacity: 0.4 }} />
+              <h3 style={{ marginTop: 12, marginBottom: 4 }}>No Review Selected</h3>
+              <p style={{ color: "var(--text3)", fontSize: 13.5 }}>Pick a past review session from the sidebar</p>
             </div>
           )}
 
           {selected && (
             <div className="fade-in" style={{ height: "100%", display: "flex", flexDirection: "column" }}>
-              {/* Header */}
+              {/* Detail Header Bar */}
               <div style={s.detailHeader}>
-                <div>
-                  <span style={s.langBadge}>{selected.language}</span>
-                  <span style={{ fontSize: 13, color: "var(--text3)", marginLeft: 10 }}>{fmt(selected.createdAt)}</span>
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <span style={s.activeLangBadge}>{selected.language.toUpperCase()}</span>
+                  <span style={{ fontSize: 13, color: "var(--text3)" }}>Audited on {fmt(selected.createdAt)}</span>
                 </div>
+                
                 <div style={s.viewTabs}>
-                  {["feedback", "code"].map((v) => (
-                    <button key={v} onClick={() => setView(v)} style={{ ...s.viewTab, ...(view === v ? s.viewTabActive : {}) }}>
-                      {v === "feedback" ? "AI Feedback" : "Submitted Code"}
-                    </button>
-                  ))}
+                  <button
+                    onClick={() => setView("feedback")}
+                    style={{ ...s.viewTab, ...(view === "feedback" ? s.viewTabActive : {}) }}
+                  >
+                    <Icons.Sparkles size={14} /> AI Feedback
+                  </button>
+                  <button
+                    onClick={() => setView("code")}
+                    style={{ ...s.viewTab, ...(view === "code" ? s.viewTabActive : {}) }}
+                  >
+                    <Icons.Code size={14} /> Submitted Code
+                  </button>
                 </div>
               </div>
 
-              {/* Content */}
+              {/* Detail Body Content */}
               <div style={s.detailBody}>
                 {view === "feedback" && (
                   <div className="md-content">
                     <ReactMarkdown>{selected.feedback}</ReactMarkdown>
                   </div>
                 )}
+
                 {view === "code" && (
-                  <pre style={s.codeBlock}>{selected.code}</pre>
+                  <div style={s.codeContainer}>
+                    <pre style={s.codeBlock}>{selected.code}</pre>
+                  </div>
                 )}
               </div>
             </div>
@@ -119,57 +137,141 @@ export default function History() {
 }
 
 const s = {
-  layout: { flex: 1, display: "flex", overflow: "hidden", height: "calc(100vh - 64px)" },
+  layout: { flex: 1, display: "flex", overflow: "hidden", height: "calc(100vh - 62px)" },
   sidebar: {
-    width: 300, flexShrink: 0,
-    background: "var(--bg2)", borderRight: "1px solid var(--border)",
-    display: "flex", flexDirection: "column",
+    width: 320,
+    flexShrink: 0,
+    background: "var(--bg2)",
+    borderRight: "1px solid var(--border)",
+    display: "flex",
+    flexDirection: "column",
     overflowY: "auto",
   },
   sideHeader: {
-    padding: "16px 16px 12px",
+    padding: "14px 16px",
     borderBottom: "1px solid var(--border)",
-    display: "flex", alignItems: "center", gap: 8,
-    position: "sticky", top: 0, background: "var(--bg2)", zIndex: 1,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    position: "sticky",
+    top: 0,
+    background: "var(--bg2)",
+    zIndex: 1,
   },
   count: {
-    background: "var(--primary-dim)", color: "var(--primary)",
-    borderRadius: 20, padding: "2px 8px", fontSize: 11, fontWeight: 700,
+    background: "var(--primary-dim)",
+    color: "var(--primary)",
+    borderRadius: 20,
+    padding: "2px 8px",
+    fontSize: 11.5,
+    fontWeight: 700,
+    border: "1px solid rgba(99,102,241,0.2)",
   },
-  sideEmpty: { padding: 20, color: "var(--text3)", fontSize: 14, textAlign: "center", marginTop: 20 },
+  sideEmpty: {
+    padding: 30,
+    color: "var(--text3)",
+    fontSize: 13.5,
+    textAlign: "center",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+  },
   sideItem: {
-    padding: "12px 16px", cursor: "pointer",
+    padding: "12px 16px",
+    cursor: "pointer",
     borderBottom: "1px solid var(--border)",
-    transition: "background 0.15s",
-  },
-  langDot: { width: 8, height: 8, borderRadius: "50%", flexShrink: 0 },
-  snippet: { fontSize: 11, color: "var(--text3)", fontFamily: "monospace", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" },
-  main: { flex: 1, overflowY: "auto" },
-  empty: { height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 8 },
-  detailHeader: {
-    padding: "16px 24px",
-    borderBottom: "1px solid var(--border)",
-    display: "flex", alignItems: "center", justifyContent: "space-between",
-    flexWrap: "wrap", gap: 12,
-    position: "sticky", top: 0, background: "var(--bg)", zIndex: 1,
+    borderLeft: "3.5px solid transparent",
+    transition: "all 0.15s ease",
   },
   langBadge: {
-    background: "var(--primary-dim)", color: "var(--primary)",
-    padding: "3px 10px", borderRadius: 6, fontSize: 12, fontWeight: 700,
+    fontSize: 10.5,
+    fontWeight: 700,
+    color: "var(--primary)",
+    background: "var(--primary-dim)",
+    padding: "2px 6px",
+    borderRadius: 4,
+    fontFamily: "'JetBrains Mono', monospace",
   },
-  viewTabs: { display: "flex", gap: 4 },
+  activeLangBadge: {
+    fontSize: 11.5,
+    fontWeight: 800,
+    color: "var(--primary)",
+    background: "var(--primary-dim)",
+    padding: "3px 8px",
+    borderRadius: 6,
+    border: "1px solid rgba(99,102,241,0.25)",
+    fontFamily: "'JetBrains Mono', monospace",
+  },
+  snippet: {
+    fontSize: 12,
+    color: "var(--text2)",
+    fontFamily: "'JetBrains Mono', monospace",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap",
+  },
+  main: { flex: 1, overflowY: "auto", background: "var(--bg)" },
+  empty: {
+    height: "100%",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  detailHeader: {
+    padding: "14px 24px",
+    borderBottom: "1px solid var(--border)",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    flexWrap: "wrap",
+    gap: 12,
+    position: "sticky",
+    top: 0,
+    background: "var(--glass-bg)",
+    backdropFilter: "blur(12px)",
+    zIndex: 1,
+  },
+  viewTabs: { display: "flex", gap: 6 },
   viewTab: {
-    background: "var(--bg3)", color: "var(--text2)",
-    border: "1px solid var(--border)", padding: "6px 14px",
-    fontSize: 13, borderRadius: 8,
+    background: "var(--bg3)",
+    color: "var(--text2)",
+    border: "1px solid var(--border)",
+    padding: "6px 14px",
+    fontSize: 12.5,
+    fontWeight: 600,
+    borderRadius: 8,
+    display: "flex",
+    alignItems: "center",
+    gap: 6,
   },
-  viewTabActive: { background: "var(--primary-dim)", color: "var(--primary)", borderColor: "var(--primary)" },
+  viewTabActive: {
+    background: "var(--primary-dim)",
+    color: "var(--primary)",
+    borderColor: "var(--primary)",
+  },
   detailBody: { padding: 24 },
+  codeContainer: {
+    background: "var(--bg2)",
+    border: "1px solid var(--border)",
+    borderRadius: 10,
+    padding: 20,
+    overflowX: "auto",
+  },
   codeBlock: {
-    background: "var(--bg2)", border: "1px solid var(--border)",
-    borderRadius: 10, padding: 20,
-    fontFamily: "monospace", fontSize: 13,
-    whiteSpace: "pre-wrap", color: "var(--text)",
+    fontFamily: "'JetBrains Mono', monospace",
+    fontSize: 13,
+    whiteSpace: "pre-wrap",
+    color: "var(--text)",
     lineHeight: 1.65,
+  },
+  spinner: {
+    width: 18,
+    height: 18,
+    border: "2px solid var(--border2)",
+    borderTopColor: "var(--primary)",
+    borderRadius: "50%",
+    animation: "spin 0.8s linear infinite",
+    display: "inline-block",
   },
 };
