@@ -18,16 +18,21 @@ function loadEnv() {
     process.exit(1);
   }
 
-  if (process.env.JWT_SECRET.length < 16) {
+  const mongoUri = process.env.MONGO_URI;
+  const nodeEnv = process.env.NODE_ENV || "development";
+
+  if (nodeEnv === "production" && (mongoUri.includes("127.0.0.1") || mongoUri.includes("localhost"))) {
     console.warn(
-      "⚠️  JWT_SECRET is short. Use a long, random string (32+ chars) in production."
+      `\n⚠️  WARNING: MONGO_URI is set to local host (${mongoUri}) in production mode.\n` +
+      `   On Cloud platforms like Render, set MONGO_URI in Render Environment Variables to your MongoDB Atlas connection string:\n` +
+      `   mongodb+srv://<user>:<password>@cluster.mongodb.net/ai-code-review\n`
     );
   }
 
   return {
     port: parseInt(process.env.PORT, 10) || 5000,
-    nodeEnv: process.env.NODE_ENV || "development",
-    mongoUri: process.env.MONGO_URI,
+    nodeEnv,
+    mongoUri,
     jwtSecret: process.env.JWT_SECRET,
     anthropicApiKey: process.env.ANTHROPIC_API_KEY,
     anthropicModel: process.env.ANTHROPIC_MODEL || "claude-sonnet-5",
