@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import API from "../api/axios";
 import Navbar from "../components/Navbar";
 import { ToastContainer, useToast } from "../components/Toast";
@@ -112,7 +112,7 @@ export default function Register() {
           </button>
 
           <p style={s.linkText}>
-            Already have an account? <a href="/login">Sign in</a>
+            Already have an account? <Link to="/login" style={{ color: "var(--primary)", fontWeight: 600 }}>Sign in</Link>
           </p>
         </div>
       </div>

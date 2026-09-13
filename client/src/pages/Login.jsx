@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import API from "../api/axios";
 import Navbar from "../components/Navbar";
 import { ToastContainer, useToast } from "../components/Toast";
@@ -87,7 +87,7 @@ export default function Login() {
           </button>
 
           <p style={s.linkText}>
-            Don't have an account? <a href="/register">Create one for free</a>
+            Don't have an account? <Link to="/register" style={{ color: "var(--primary)", fontWeight: 600 }}>Create one for free</Link>
           </p>
         </div>
       </div>
