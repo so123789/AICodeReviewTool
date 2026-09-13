@@ -34,7 +34,7 @@ export default function Navbar() {
     <nav style={s.nav} className="glass-nav">
       <div style={s.inner}>
         {/* Brand Logo */}
-        <div style={s.logo} onClick={() => navigate(isLoggedIn ? "/dashboard" : "/")}>
+        <div style={s.logo} onClick={() => navigate("/")}>
           <Icons.Logo size={24} />
           <span style={s.logoText}>
             CodeReview<span style={{ color: "var(--primary)" }}>.AI</span>
