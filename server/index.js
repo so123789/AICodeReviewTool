@@ -15,26 +15,37 @@ const app = express();
 app.use(helmet());
 app.use(morgan(env.nodeEnv === "production" ? "combined" : "dev"));
 
-// Flexible, production-hardened CORS middleware.
-// Allows local dev (localhost) and deployed frontend origins (Render, Vercel, Netlify).
-// Cleans trailing slashes from incoming origin headers for robust matching.
+// Production-hardened, multi-origin CORS handler.
+// Automatically allows localhost, onrender.com subdomains, and any configured CORS_ORIGINS.
 app.use(
   cors({
     origin: (origin, callback) => {
-      if (!origin) return callback(null, true); // Allow non-browser calls (mobile, curl, health checks)
+      // Allow requests with no origin (like mobile apps, curl, server-to-server health checks)
+      if (!origin) return callback(null, true);
+
       const cleanOrigin = origin.replace(/\/$/, "");
+
+      // Check if origin is explicitly allowed or wildcard
       const isAllowed =
         env.corsOrigins.includes("*") ||
-        env.corsOrigins.some((o) => o.replace(/\/$/, "") === cleanOrigin);
+        env.corsOrigins.some((o) => o.replace(/\/$/, "") === cleanOrigin) ||
+        cleanOrigin.endsWith(".onrender.com") ||
+        cleanOrigin.includes("localhost");
 
-      if (isAllowed) return callback(null, true);
-      return callback(new Error(`Origin ${origin} not allowed by CORS`));
+      if (isAllowed) {
+        return callback(null, true);
+      }
+      
+      console.warn(`[CORS] Blocked request from origin: ${origin}`);
+      return callback(null, false);
     },
     credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
 
-// Cap request body size — the review endpoint also enforces MAX_CODE_LENGTH.
+// Cap request body size
 app.use(express.json({ limit: "1mb" }));
 
 app.use("/api", apiLimiter);
@@ -43,9 +54,9 @@ app.use("/api", apiLimiter);
 app.use("/api/auth", require("./routes/auth"));
 app.use("/api/review", require("./routes/review"));
 
-// Liveness/readiness check that also reports DB connectivity
+// Health check endpoint
 app.get("/health", (req, res) => {
-  const dbState = mongoose.connection.readyState; // 1 = connected
+  const dbState = mongoose.connection.readyState;
   res.status(dbState === 1 ? 200 : 503).json({
     status: dbState === 1 ? "ok" : "degraded",
     db: ["disconnected", "connected", "connecting", "disconnecting"][dbState] || "unknown",
@@ -61,13 +72,11 @@ app.use(errorHandler);
 
 let server;
 
-// In the test environment, the test suite owns the Mongo connection
 if (env.nodeEnv !== "test") {
   mongoose
     .connect(env.mongoUri)
     .then(() => {
       console.log("✅ MongoDB connected successfully");
-      // Explicitly listen on '0.0.0.0' for Cloud hosting platforms (Render, Railway, Docker)
       server = app.listen(env.port, "0.0.0.0", () =>
         console.log(`✅ Server running on http://0.0.0.0:${env.port} [${env.nodeEnv}]`)
       );
@@ -78,7 +87,6 @@ if (env.nodeEnv !== "test") {
     });
 }
 
-// Graceful shutdown — let in-flight requests finish cleanly
 function shutdown(signal) {
   console.log(`\n${signal} received. Shutting down gracefully...`);
   if (server) {
